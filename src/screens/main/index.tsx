@@ -1,15 +1,14 @@
-import { registerRootComponent } from 'expo';
+// src/screens/main/index.tsx
 import React from 'react';
-import { ProdukProvider } from './context/ProdukContext';
-import AppNavigator from './navigation/AppNavigator'; // Sesuaikan jika nama file navigator Anda berbeda
+import { ProductProvider } from '../../context/ProdukContext';
+import { AppNavigator } from '../../navigation/AppNavigator';   // <-- pakai kurung kurawal
 
-function App() {
+function MainApp() {
   return (
-    <ProdukProvider>
+    <ProductProvider>
       <AppNavigator />
-    </ProdukProvider>
+    </ProductProvider>
   );
 }
 
-// Mendaftarkan komponen utama ke Expo
-registerRootComponent(App);
+export default MainApp;

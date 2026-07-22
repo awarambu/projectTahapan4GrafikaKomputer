@@ -1,14 +1,13 @@
-import { Timestamp } from 'firebase/firestore';
-
 export interface Product {
-  id: string; // wajib
+  id: string;
   name: string;
-  category: string;
   price: number;
   stock: number;
-  barcode?: string; // opsional
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  category: string;
+  description?: string;
+  image?: string;
+  createdAt: any;
+  updatedAt: any;
 }
 
 export interface ProductValidation {

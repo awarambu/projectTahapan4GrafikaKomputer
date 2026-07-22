@@ -1,15 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
-  Product,
   getProducts,
   addProduct,
   updateProduct,
   deleteProduct,
   getProductById,
-  searchProducts,
   validateProduct,
-  ProductValidation,
 } from '../services/productService';
+import { Product, ProductValidation } from '../types/product.types';
 
 interface ProductContextType {
   products: Product[];
@@ -20,11 +18,21 @@ interface ProductContextType {
   updateProduct: (id: string, data: Partial<Product>) => Promise<{ success: boolean; errors?: ProductValidation; message?: string }>;
   deleteProduct: (id: string) => Promise<{ success: boolean; message?: string }>;
   getProduct: (id: string) => Promise<Product | null>;
-  searchProducts: (text: string) => Promise<Product[]>;
+  searchProducts: (text: string) => Promise<Product[]>;   // <-- tetap dideklarasikan
   validateProduct: (data: Partial<Product>) => ProductValidation;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
+
+// ========== VALIDASI PARSIAL ==========
+const validatePartialProduct = (data: Partial<Product>): ProductValidation => {
+  const errors: ProductValidation = {};
+  if (data.name !== undefined && !data.name.trim()) errors.name = 'Nama produk wajib diisi';
+  if (data.price !== undefined && data.price < 0) errors.price = 'Harga tidak boleh negatif';
+  if (data.stock !== undefined && data.stock < 0) errors.stock = 'Stok tidak boleh negatif';
+  if (data.category !== undefined && !data.category.trim()) errors.category = 'Kategori wajib diisi';
+  return errors;
+};
 
 export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -44,12 +52,23 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, []);
 
+  // ===== FUNGSI SEARCH (langsung di sini) =====
+  const searchProductsLocal = async (text: string): Promise<Product[]> => {
+    const allProducts = await getProducts(); // ambil ulang data terbaru
+    const lowerText = text.toLowerCase().trim();
+    if (!lowerText) return allProducts;
+    return allProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(lowerText) ||
+        p.category.toLowerCase().includes(lowerText)
+    );
+  };
+
   const addNewProduct = async (data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
     const errors = validateProduct(data);
     if (Object.keys(errors).length > 0) {
       return { success: false, errors };
     }
-    
     setLoading(true);
     try {
       await addProduct(data);
@@ -63,11 +82,10 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateExistingProduct = async (id: string, data: Partial<Product>) => {
-    const errors = validateProduct(data);
+    const errors = validatePartialProduct(data);
     if (Object.keys(errors).length > 0) {
       return { success: false, errors };
     }
-    
     setLoading(true);
     try {
       await updateProduct(id, data);
@@ -108,8 +126,8 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateProduct: updateExistingProduct,
         deleteProduct: deleteExistingProduct,
         getProduct: getProductById,
-        searchProducts,
-        validateProduct,
+        searchProducts: searchProductsLocal,   // <-- PASTIKAN INI ADA
+        validateProduct: validatePartialProduct,
       }}
     >
       {children}
